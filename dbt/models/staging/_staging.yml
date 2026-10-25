@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: stg_contoso__orders
+    columns:
+      - name: order_key
+        data_tests: [unique, not_null]
+  - name: stg_contoso__order_lines
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_key, line_number]
+    columns:
+      - name: quantity
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 1}
+      - name: net_price_usd
+        description: Price actually charged per unit, in USD (never above unit_price_usd).
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments: {expression: "<= unit_price_usd"}
+  - name: stg_contoso__customers
+    description: Customers with all personal details (names, addresses, postcodes, coordinates, employer) removed.
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+  - name: stg_contoso__products
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+  - name: stg_contoso__stores
+    columns:
+      - name: store_key
+        data_tests: [unique, not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Open, Closed, Restructured]}

@@ -1,0 +1,85 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: One row per customer who has ordered. Acquisition = first order; activity measured as of var('analysis_date').
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+      - name: acquisition_channel
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Online, Store]}
+  - name: dim_product
+    columns:
+      - name: product_key
+        data_tests: [unique, not_null]
+  - name: dim_store
+    columns:
+      - name: store_key
+        data_tests: [unique, not_null]
+  - name: dim_date
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: fct_orders
+    description: One row per order, money in USD.
+    columns:
+      - name: order_key
+        data_tests: [unique, not_null]
+      - name: customer_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_customer'), field: customer_key}
+      - name: store_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_store'), field: store_key}
+      - name: channel
+        data_tests:
+          - accepted_values:
+              arguments: {values: [Online, Store]}
+      - name: delivery_days
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0}
+  - name: fct_order_lines
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_key, line_number]
+    columns:
+      - name: product_key
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_product'), field: product_key}
+
+  - name: mart_monthly_kpis
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [order_month, channel, customer_country]
+  - name: mart_cohort_retention
+    description: Acquisition cohort × months since first order, with retention and cumulative value per customer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cohort_month, months_since_first]
+  - name: mart_customer_rfm
+    description: RFM scores and named segment per customer, as of var('analysis_date').
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+      - name: segment
+        data_tests: [not_null]
+  - name: mart_store_performance
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [store_key, year]
+  - name: mart_store_closure_impact
+    description: For each store that closed during the extract, what its recent customers did in the 12 months after.
+    columns:
+      - name: store_key
+        data_tests: [unique, not_null]

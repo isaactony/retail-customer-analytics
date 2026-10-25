@@ -1,0 +1,20 @@
+"""Quick profile of the raw Contoso CSVs (stdlib only)."""
+import csv, sys, collections, pathlib, datetime as dt
+raw = pathlib.Path(sys.argv[1])
+o = list(csv.DictReader(open(raw / "orders.csv")))
+dates = sorted(r["OrderDate"] for r in o)
+print("orders", len(o), "from", dates[0], "to", dates[-1])
+print("orders per year", dict(sorted(collections.Counter(d[:4] for d in dates).items())))
+lag = collections.Counter((dt.date.fromisoformat(r["DeliveryDate"]) - dt.date.fromisoformat(r["OrderDate"])).days for r in o)
+print("delivery lag days (top)", lag.most_common(8))
+print("currencies", collections.Counter(r["CurrencyCode"] for r in o).most_common())
+cust_orders = collections.Counter(r["CustomerKey"] for r in o)
+print("customers with orders", len(cust_orders), "| orders per customer distribution", sorted(collections.Counter(min(v, 10) for v in cust_orders.values()).items()))
+stores = {r["StoreKey"]: r for r in csv.DictReader(open(raw / "store.csv"))}
+sc = collections.Counter(r["StoreKey"] for r in o)
+print("top stores", [(stores[k]["Description"], v) for k, v in sc.most_common(4)])
+print("store status", collections.Counter(s["Status"] or "(open)" for s in stores.values()))
+p = list(csv.DictReader(open(raw / "product.csv")))
+print("categories", collections.Counter(r["CategoryName"] for r in p).most_common())
+c = list(csv.DictReader(open(raw / "customer.csv")))
+print("customer countries", collections.Counter(r["CountryFull"] for r in c).most_common())

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5B6573"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="460" fill="#FFFFFF"/>
+
+  <!-- Source -->
+  <text x="40" y="44" font-size="15" font-weight="700" fill="#5B6573" letter-spacing="1">SOURCE</text>
+  <rect x="40" y="64" width="200" height="150" rx="10" fill="#FFF4E0" stroke="#E8A33D" stroke-width="1.5"/>
+  <text x="58" y="96" font-size="17" font-weight="700" fill="#2B2F36">Contoso V2 extract</text>
+  <text x="58" y="122" font-size="14" fill="#4A515C">SQLBI, MIT licence</text>
+  <text x="58" y="144" font-size="14" fill="#4A515C">8 CSV files, 49 MB 7z</text>
+  <text x="58" y="166" font-size="14" fill="#4A515C">980,666 orders</text>
+  <text x="58" y="188" font-size="13" fill="#8A929E">May 2016 – Dec 2025</text>
+
+  <!-- Loader -->
+  <rect x="40" y="250" width="200" height="130" rx="10" fill="#F2F4F7" stroke="#8A929E" stroke-width="1.5"/>
+  <text x="58" y="282" font-size="17" font-weight="700" fill="#2B2F36">Python loader</text>
+  <text x="58" y="306" font-size="13" fill="#4A515C">safe unpack, then COPY</text>
+  <text x="58" y="326" font-size="13" fill="#4A515C">every column as text</text>
+  <text x="58" y="346" font-size="13" fill="#4A515C">reloads only on new SHA-256</text>
+  <text x="58" y="366" font-size="13" fill="#4A515C">9 seconds for 6M rows</text>
+  <line x1="140" y1="216" x2="140" y2="246" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- Warehouse -->
+  <rect x="280" y="30" width="520" height="400" rx="14" fill="#F7F9FC" stroke="#3FA7D6" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="300" y="58" font-size="15" font-weight="700" fill="#2F6F9F" letter-spacing="1">POSTGRES 16 WAREHOUSE (DOCKER)  ·  dbt</text>
+
+  <rect x="300" y="78" width="480" height="58" rx="8" fill="#FFFFFF" stroke="#B9C2CE"/>
+  <text x="316" y="102" font-size="15" font-weight="700" fill="#2B2F36">raw</text>
+  <text x="316" y="123" font-size="13" fill="#4A515C">the 8 files as delivered · load manifest with checksums</text>
+
+  <rect x="300" y="150" width="480" height="58" rx="8" fill="#FFFFFF" stroke="#B9C2CE"/>
+  <text x="316" y="174" font-size="15" font-weight="700" fill="#2B2F36">staging</text>
+  <text x="316" y="195" font-size="13" fill="#4A515C">types, money in USD · names and addresses dropped here</text>
+
+  <rect x="300" y="222" width="480" height="58" rx="8" fill="#FFFFFF" stroke="#B9C2CE"/>
+  <text x="316" y="246" font-size="15" font-weight="700" fill="#2B2F36">intermediate</text>
+  <text x="316" y="267" font-size="13" fill="#4A515C">orders with each customer's order sequence and gaps</text>
+
+  <rect x="300" y="294" width="480" height="118" rx="8" fill="#FFFFFF" stroke="#B9C2CE"/>
+  <text x="316" y="318" font-size="15" font-weight="700" fill="#2B2F36">marts</text>
+  <text x="316" y="340" font-size="13" fill="#4A515C">core: fct_orders · fct_order_lines · customer, product,</text>
+  <text x="316" y="358" font-size="13" fill="#4A515C">store and date dimensions</text>
+  <text x="316" y="380" font-size="13" fill="#4A515C">analytics: monthly KPIs · cohort retention · RFM segments</text>
+  <text x="316" y="398" font-size="13" fill="#4A515C">· store performance · store closure impact</text>
+
+  <line x1="540" y1="137" x2="540" y2="147" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="540" y1="209" x2="540" y2="219" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="540" y1="281" x2="540" y2="291" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="242" y1="300" x2="296" y2="110" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <!-- Tests -->
+  <rect x="840" y="64" width="320" height="110" rx="10" fill="#FDEBEC" stroke="#D1495B" stroke-width="1.5"/>
+  <text x="858" y="96" font-size="17" font-weight="700" fill="#2B2F36">dbt tests (60 build steps)</text>
+  <text x="858" y="120" font-size="13" fill="#4A515C">revenue reconciles to the cent with order lines</text>
+  <text x="858" y="140" font-size="13" fill="#4A515C">sales headers match orders · keys and ranges</text>
+  <text x="858" y="160" font-size="13" fill="#4A515C">every customer gets a segment</text>
+  <line x1="836" y1="140" x2="784" y2="178" stroke="#D1495B" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+
+  <!-- Metabase -->
+  <rect x="840" y="214" width="320" height="198" rx="10" fill="#EEF0FB" stroke="#7172AD" stroke-width="1.5"/>
+  <text x="858" y="246" font-size="17" font-weight="700" fill="#2B2F36">Metabase semantic layer</text>
+  <text x="858" y="272" font-size="13" fill="#4A515C">3 models with named, typed columns</text>
+  <text x="858" y="292" font-size="13" fill="#4A515C">9 shared metric definitions</text>
+  <text x="858" y="312" font-size="13" fill="#4A515C">25 questions, mostly built in the visual editor</text>
+  <text x="858" y="332" font-size="13" fill="#4A515C">4 dashboards with filters and click-to-filter</text>
+  <text x="858" y="360" font-size="13" fill="#4A515C">defined in metabase.yml, deployed through</text>
+  <text x="858" y="380" font-size="13" fill="#4A515C">the API with an API key</text>
+  <text x="858" y="400" font-size="12" fill="#8A929E">read-only role, marts schema only</text>
+  <line x1="782" y1="353" x2="836" y2="320" stroke="#5B6573" stroke-width="1.8" marker-end="url(#arrow)"/>
+</svg>

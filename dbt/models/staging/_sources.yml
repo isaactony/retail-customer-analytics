@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: raw
+    description: The Contoso V2 CSV extract (1M-order size), loaded as text by ingest/load_raw.py.
+    schema: raw
+    tables:
+      - name: orders
+      - name: orderrows
+      - name: sales
+        description: Order lines denormalised with their order header, plus the USD → order-currency exchange rate.
+      - name: customer
+        description: Synthetic customers, including fake names and addresses that are dropped in staging.
+      - name: product
+      - name: store
+      - name: currencyexchange
+      - name: date
+      - name: _loads
+        description: One row per file load (file, SHA-256, row count, time).

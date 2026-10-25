@@ -1,0 +1,26 @@
+recency_score,frequency_score,segment,segment_order,recommended_action
+5,5,Champions,1,Reward and ask for reviews; early access to launches
+5,4,Champions,1,Reward and ask for reviews; early access to launches
+4,5,Loyal,2,Upsell higher-margin categories; loyalty perks
+4,4,Loyal,2,Upsell higher-margin categories; loyalty perks
+3,5,Loyal,2,Upsell higher-margin categories; loyalty perks
+3,4,Loyal,2,Upsell higher-margin categories; loyalty perks
+5,3,Potential loyalists,3,Membership offer after the next purchase
+5,2,Potential loyalists,3,Membership offer after the next purchase
+4,3,Potential loyalists,3,Membership offer after the next purchase
+4,2,Potential loyalists,3,Membership offer after the next purchase
+5,1,New customers,4,Onboarding sequence; second-purchase incentive
+4,1,Promising,5,Second-purchase incentive within 30 days
+3,3,Need attention,6,Personalised recommendations; limited-time offer
+3,2,Need attention,6,Personalised recommendations; limited-time offer
+3,1,About to sleep,7,Reactivation email with bestsellers
+2,5,Can't lose them,8,Win-back offer and a personal call for top spenders
+1,5,Can't lose them,8,Win-back offer and a personal call for top spenders
+2,4,At risk,9,Win-back campaign; survey why they stopped
+2,3,At risk,9,Win-back campaign; survey why they stopped
+1,4,At risk,9,Win-back campaign; survey why they stopped
+1,3,At risk,9,Win-back campaign; survey why they stopped
+2,2,Hibernating,10,Low-cost reactivation only
+2,1,Hibernating,10,Low-cost reactivation only
+1,2,Hibernating,10,Low-cost reactivation only
+1,1,Lost,11,Exclude from paid campaigns

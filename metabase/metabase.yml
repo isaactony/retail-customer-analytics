@@ -1,0 +1,428 @@
+# The Metabase layer as code: models (curated datasets), metrics (shared definitions) and
+# dashboards. Deployed by `python metabase/deploy.py` (see README).
+#
+# Shorthand the deployer expands:
+#   "@column"          → a field ref on the question's model, typed from that model's columns
+#   "@column|month"    → the same with a temporal unit (day, week, month, quarter, year)
+#   "metric:Name"      → a reference to one of the metrics below
+#   source: model:Name → the question is built on that model, in Metabase's visual editor (MBQL)
+# Questions with `sql:` are native SQL against the marts schema.
+
+collection: Contoso retail analytics
+
+models:
+  - name: Orders
+    description: One row per order, May 2016 to Dec 2025, with the customer's and store's attributes. Money in USD.
+    sql: |
+      select o.order_key, o.order_date, o.channel, o.currency_code,
+             o.customer_key, c.country as customer_country, c.country_code as customer_country_code,
+             c.acquisition_channel, c.cohort_year,
+             s.store_key, s.store_name, s.country as store_country,
+             o.item_count, o.net_revenue_usd, o.gross_margin_usd, o.discount_usd,
+             o.delivery_days, o.is_first_order, o.customer_order_number
+      from marts.fct_orders o
+      join marts.dim_customer c using (customer_key)
+      join marts.dim_store s using (store_key)
+    columns:
+      order_key:             {type: BigInteger, name: Order ID, semantic: PK}
+      order_date:            {type: Date, name: Order date}
+      channel:               {type: Text, name: Channel, semantic: Category}
+      currency_code:         {type: Text, name: Currency, semantic: Category}
+      customer_key:          {type: BigInteger, name: Customer ID, semantic: FK}
+      customer_country:      {type: Text, name: Customer country, semantic: Category}
+      customer_country_code: {type: Text, name: Customer country code, semantic: Country}
+      acquisition_channel:   {type: Text, name: Acquisition channel, semantic: Category}
+      cohort_year:           {type: Integer, name: Cohort year, semantic: Category, settings: {number_separators: "."}}
+      store_key:             {type: Integer, name: Store ID, semantic: FK}
+      store_name:            {type: Text, name: Store, semantic: Category}
+      store_country:         {type: Text, name: Store country, semantic: Category}
+      item_count:            {type: BigInteger, name: Items, semantic: Quantity}
+      net_revenue_usd:       {type: Decimal, name: Net revenue, semantic: Currency}
+      gross_margin_usd:      {type: Decimal, name: Gross margin, semantic: Currency}
+      discount_usd:          {type: Decimal, name: Discount, semantic: Currency}
+      delivery_days:         {type: Integer, name: Delivery days}
+      is_first_order:        {type: Boolean, name: First order}
+      customer_order_number: {type: BigInteger, name: Customer order number}
+
+  - name: Order lines
+    description: One row per order line with its product, for category and product mix. Money in USD.
+    sql: |
+      select l.order_key, l.line_number, l.order_date, l.channel, l.customer_key,
+             p.category, p.subcategory, p.brand, p.product_name,
+             l.quantity, l.net_revenue_usd, l.gross_margin_usd, l.discount_usd
+      from marts.fct_order_lines l
+      join marts.dim_product p using (product_key)
+    columns:
+      order_key:        {type: BigInteger, name: Order ID, semantic: FK}
+      line_number:      {type: Integer, name: Line}
+      order_date:       {type: Date, name: Order date}
+      channel:          {type: Text, name: Channel, semantic: Category}
+      customer_key:     {type: BigInteger, name: Customer ID, semantic: FK}
+      category:         {type: Text, name: Category, semantic: Category}
+      subcategory:      {type: Text, name: Subcategory, semantic: Category}
+      brand:            {type: Text, name: Brand, semantic: Category}
+      product_name:     {type: Text, name: Product}
+      quantity:         {type: Integer, name: Quantity, semantic: Quantity}
+      net_revenue_usd:  {type: Decimal, name: Net revenue, semantic: Currency}
+      gross_margin_usd: {type: Decimal, name: Gross margin, semantic: Currency}
+      discount_usd:     {type: Decimal, name: Discount, semantic: Currency}
+
+  - name: Customers
+    description: One row per customer who has ordered, with lifetime value and their RFM segment as of 31 Dec 2025. No personal details.
+    sql: |
+      select c.customer_key, c.country, c.country_code, c.gender, c.age_band_at_first_order,
+             c.cohort_year, c.acquisition_channel, c.first_order_date, c.last_order_date,
+             c.lifetime_orders, c.lifetime_revenue_usd, c.lifetime_gross_margin_usd,
+             c.days_since_last_order, c.is_active,
+             r.segment, r.segment_order, r.recommended_action,
+             r.recency_score, r.frequency_score, r.monetary_score
+      from marts.dim_customer c
+      join marts.mart_customer_rfm r using (customer_key)
+    columns:
+      customer_key:              {type: BigInteger, name: Customer ID, semantic: PK}
+      country:                   {type: Text, name: Country, semantic: Category}
+      country_code:              {type: Text, name: Country code, semantic: Country}
+      gender:                    {type: Text, name: Gender, semantic: Category}
+      age_band_at_first_order:   {type: Text, name: Age band at first order, semantic: Category}
+      cohort_year:               {type: Integer, name: Cohort year, semantic: Category, settings: {number_separators: "."}}
+      acquisition_channel:       {type: Text, name: Acquisition channel, semantic: Category}
+      first_order_date:          {type: Date, name: First order date}
+      last_order_date:           {type: Date, name: Last order date}
+      lifetime_orders:           {type: BigInteger, name: Lifetime orders, semantic: Quantity}
+      lifetime_revenue_usd:      {type: Decimal, name: Lifetime revenue, semantic: Currency}
+      lifetime_gross_margin_usd: {type: Decimal, name: Lifetime gross margin, semantic: Currency}
+      days_since_last_order:     {type: Integer, name: Days since last order}
+      is_active:                 {type: Boolean, name: Active in last 12 months}
+      segment:                   {type: Text, name: Segment, semantic: Category}
+      segment_order:             {type: Integer, name: Segment order}
+      recommended_action:        {type: Text, name: Recommended action}
+      recency_score:             {type: Integer, name: Recency score, semantic: Score}
+      frequency_score:           {type: Integer, name: Frequency score, semantic: Score}
+      monetary_score:            {type: Integer, name: Monetary score, semantic: Score}
+
+metrics:
+  - name: Net revenue
+    model: Orders
+    description: Revenue after discounts, in USD.
+    aggregation: [sum, "@net_revenue_usd"]
+  - name: Gross margin
+    model: Orders
+    description: Net revenue minus product cost, in USD.
+    aggregation: [sum, "@gross_margin_usd"]
+  - name: Gross margin %
+    model: Orders
+    description: Gross margin as a share of net revenue.
+    aggregation: [/, [sum, "@gross_margin_usd"], [sum, "@net_revenue_usd"]]
+  - name: Orders
+    model: Orders
+    description: Number of orders.
+    aggregation: [count]
+  - name: Average order value
+    model: Orders
+    description: Net revenue per order, in USD.
+    aggregation: [/, [sum, "@net_revenue_usd"], [count]]
+  - name: Revenue per item
+    model: Orders
+    description: Net revenue per item sold, in USD.
+    aggregation: [/, [sum, "@net_revenue_usd"], [sum, "@item_count"]]
+  - name: Buying customers
+    model: Orders
+    description: Distinct customers who ordered in the period.
+    aggregation: [distinct, "@customer_key"]
+  - name: Repeat customer rate
+    model: Customers
+    description: Share of customers who have placed more than one order.
+    aggregation: [share, [">", "@lifetime_orders", 1]]
+  - name: Average lifetime value
+    model: Customers
+    description: Average lifetime net revenue per customer, in USD.
+    aggregation: [avg, "@lifetime_revenue_usd"]
+
+dashboards:
+
+  # -------------------------------------------------------------------------------------------
+  - name: 1 · Commercial performance
+    description: Where Contoso's revenue and margin come from, and why order value is falling.
+    parameters:
+      - {name: Order date, slug: order_date, type: date/all-options, field: order_date}
+      - {name: Channel, slug: channel, type: string/=, field: channel}
+      - {name: Customer country, slug: country, type: string/=, field: customer_country}
+    cards:
+      - name: Net revenue, by year
+        description: Latest full year, compared with the year before.
+        source: model:Orders
+        display: smartscalar
+        layout: [0, 0, 6, 3]
+        query: {aggregation: ["metric:Net revenue"], breakout: ["@order_date|year"]}
+        viz: {scalar.compact_primary_number: true}
+      - name: Gross margin %, all orders
+        source: model:Orders
+        display: scalar
+        layout: [6, 0, 6, 3]
+        query: {aggregation: ["metric:Gross margin %"]}
+        viz: {scalar.decimals: 1, column_settings: {'["name","Gross margin %"]': {number_style: percent}}}
+      - name: Orders, by year
+        source: model:Orders
+        display: smartscalar
+        layout: [12, 0, 6, 3]
+        query: {aggregation: ["metric:Orders"], breakout: ["@order_date|year"]}
+        viz: {scalar.compact_primary_number: true}
+      - name: Average order value, by year
+        source: model:Orders
+        display: smartscalar
+        layout: [18, 0, 6, 3]
+        query: {aggregation: ["metric:Average order value"], breakout: ["@order_date|year"]}
+        viz: {column_settings: {'["name","Average order value"]': {number_style: currency, currency: USD, decimals: 0}}}
+      - name: Net revenue by month and channel
+        source: model:Orders
+        display: bar
+        layout: [0, 3, 24, 7]
+        query: {aggregation: ["metric:Net revenue"], breakout: ["@order_date|month", "@channel"]}
+        viz:
+          stackable.stack_type: stacked
+          graph.x_axis.title_text: ""
+          graph.y_axis.title_text: Net revenue (USD millions)
+          column_settings: {'["name","Net revenue"]': {number_style: currency, currency: USD, scale: 0.000001, suffix: "M", decimals: 1}}
+      - name: Order value is falling because items got cheaper
+        description: Items per order stayed at about 7.5; revenue per item fell.
+        source: model:Orders
+        display: line
+        layout: [0, 10, 12, 7]
+        query: {aggregation: ["metric:Average order value", "metric:Revenue per item"], breakout: ["@order_date|year"]}
+        viz:
+          graph.x_axis.title_text: ""
+          series_settings: {Revenue per item: {axis: right}}
+          column_settings:
+            '["name","Average order value"]': {number_style: currency, currency: USD, decimals: 0}
+            '["name","Revenue per item"]': {number_style: currency, currency: USD, decimals: 0}
+      - name: Revenue mix by category
+        description: Share of net revenue by product category, per year.
+        source: model:Order lines
+        display: bar
+        layout: [12, 10, 12, 7]
+        query: {aggregation: [[sum, "@net_revenue_usd"]], breakout: ["@order_date|year", "@category"]}
+        viz: {stackable.stack_type: normalized, graph.x_axis.title_text: "", graph.y_axis.title_text: Share of net revenue}
+      - name: Net revenue by customer country
+        source: model:Orders
+        display: map
+        layout: [0, 17, 12, 8]
+        query: {aggregation: ["metric:Net revenue"], breakout: ["@customer_country_code"]}
+        viz: {map.type: region, map.region: world_countries}
+      - name: Online share of revenue by year
+        source: model:Orders
+        display: bar
+        layout: [12, 17, 12, 8]
+        query: {aggregation: ["metric:Net revenue"], breakout: ["@order_date|year", "@channel"]}
+        viz: {stackable.stack_type: normalized, graph.x_axis.title_text: "", graph.y_axis.title_text: Share of net revenue}
+
+  # -------------------------------------------------------------------------------------------
+  - name: 2 · Customer retention and value
+    description: Who comes back, how quickly, and what customers are worth over time.
+    parameters:
+      - {name: Acquisition channel, slug: acquisition_channel, type: string/=, field: acquisition_channel, model: Customers}
+      - {name: Country, slug: country, type: string/=, field: country, model: Customers}
+    cards:
+      - name: Repeat customer rate
+        source: model:Customers
+        display: scalar
+        layout: [0, 0, 6, 3]
+        query: {aggregation: ["metric:Repeat customer rate"]}
+        viz: {scalar.decimals: 1, column_settings: {'["name","Repeat customer rate"]': {number_style: percent}}}
+      - name: Average lifetime value
+        source: model:Customers
+        display: scalar
+        layout: [6, 0, 6, 3]
+        query: {aggregation: ["metric:Average lifetime value"]}
+        viz: {column_settings: {'["name","Average lifetime value"]': {number_style: currency, currency: USD, decimals: 0}}}
+      - name: Customers lapsed for over a year
+        source: model:Customers
+        display: scalar
+        layout: [12, 0, 6, 3]
+        query: {aggregation: [[count]], filter: ["=", "@is_active", false]}
+      - name: Lifetime revenue of lapsed customers
+        source: model:Customers
+        display: scalar
+        layout: [18, 0, 6, 3]
+        query: {aggregation: [[sum, "@lifetime_revenue_usd"]], filter: ["=", "@is_active", false]}
+        viz: {scalar.compact_primary_number: true}
+      - name: New customers by year
+        description: Customers by the year of their first order. Acquisition has fallen every year since 2017.
+        source: model:Customers
+        display: bar
+        layout: [0, 3, 12, 7]
+        query: {aggregation: [[count]], breakout: ["@cohort_year", "@acquisition_channel"]}
+        viz: {stackable.stack_type: stacked, graph.x_axis.title_text: First order year, graph.y_axis.title_text: New customers}
+      - name: Lifetime value by acquisition channel
+        description: Customers first won in a store are worth more over their lifetime.
+        source: model:Customers
+        display: bar
+        layout: [12, 3, 12, 7]
+        query: {aggregation: ["metric:Average lifetime value", "metric:Repeat customer rate"], breakout: ["@acquisition_channel"]}
+        viz:
+          graph.show_values: true
+          graph.x_axis.title_text: Acquisition channel
+          series_settings: {Repeat customer rate: {display: line, axis: right}}
+      - name: Retention by cohort (% of each year's new customers who ordered in month N)
+        description: Rows are first-order years; columns are months after the first order. Complete months only.
+        display: table
+        layout: [0, 10, 24, 8]
+        heatmap_columns: [M1, M2, M3, M6, M9, M12, M18, M24, M36]
+        sql: |
+          select cohort_year::text as "Cohort",
+                 sum(cohort_customers) filter (where months_since_first = 0) as "Customers",
+                 {% for m in [1, 2, 3, 6, 9, 12, 18, 24, 36] %}round(100.0 * sum(active_customers) filter (where months_since_first = {{m}}) / nullif(sum(cohort_customers) filter (where months_since_first = {{m}}), 0), 1) as "M{{m}}"{{ "," if not loop.last }}
+                 {% endfor %}
+          from marts.mart_cohort_retention
+          where is_complete_period
+          group by 1
+          order by 1
+      - name: Cumulative revenue per customer, by cohort
+        description: Average net revenue per customer, accumulated over months since their first order.
+        display: line
+        layout: [0, 18, 24, 8]
+        viz:
+          graph.dimensions: [Months since first order, Cohort]
+          graph.metrics: [Revenue per customer]
+          graph.x_axis.title_text: Months since first order
+          graph.y_axis.title_text: Cumulative revenue per customer (USD)
+          column_settings: {'["name","Revenue per customer"]': {number_style: currency, currency: USD, decimals: 0}}
+        sql: |
+          -- each cohort year runs only as far as its last cohort month is complete (Dec 2025)
+          with revenue as (
+            select cohort_year, months_since_first, sum(net_revenue_usd) as revenue
+            from marts.mart_cohort_retention
+            group by 1, 2
+          ),
+          sizes as (
+            select cohort_year, sum(cohort_customers) as customers
+            from marts.mart_cohort_retention
+            where months_since_first = 0
+            group by 1
+          )
+          select r.months_since_first as "Months since first order", r.cohort_year::text as "Cohort",
+                 round(sum(r.revenue) over (partition by r.cohort_year order by r.months_since_first) / s.customers) as "Revenue per customer"
+          from revenue as r
+          join sizes as s using (cohort_year)
+          where r.cohort_year in (2017, 2019, 2021, 2023)
+            and r.months_since_first <= least(60, (2025 - r.cohort_year) * 12)
+          order by 1, 2
+
+  # -------------------------------------------------------------------------------------------
+  - name: 3 · Customer segments
+    description: RFM segments as of 31 Dec 2025, what each is worth, and who to win back. Click a segment to filter the page.
+    parameters:
+      - {name: Segment, slug: segment, type: string/=, field: segment, model: Customers}
+      - {name: Country, slug: country, type: string/=, field: country, model: Customers}
+    cards:
+      - name: Customers and lifetime revenue by segment
+        description: Click a bar to filter the whole page to that segment.
+        source: model:Customers
+        display: bar
+        layout: [0, 0, 12, 8]
+        click: {crossfilter: segment, column: segment}
+        query: {aggregation: [[count], [sum, "@lifetime_revenue_usd"]], breakout: ["@segment_order", "@segment"], order-by: [[asc, "@segment_order"]]}
+        viz:
+          graph.dimensions: [segment]
+          graph.metrics: [count, sum]
+          graph.x_axis.title_text: ""
+          series_settings: {sum: {display: line, axis: right, title: Lifetime revenue}, count: {title: Customers}}
+          column_settings: {'["name","sum"]': {number_style: currency, currency: USD, scale: 0.000001, suffix: "M", decimals: 0}}
+      - name: Segment playbook
+        source: model:Customers
+        display: table
+        layout: [12, 0, 12, 8]
+        query:
+          aggregation: [[count], [avg, "@days_since_last_order"], [avg, "@lifetime_orders"], [avg, "@lifetime_revenue_usd"]]
+          breakout: ["@segment_order", "@segment", "@recommended_action"]
+          order-by: [[asc, "@segment_order"]]
+        viz:
+          table.columns:
+            - {name: segment_order, enabled: false}
+            - {name: segment, enabled: true}
+            - {name: recommended_action, enabled: true}
+            - {name: count, enabled: true}
+            - {name: avg, enabled: true}
+            - {name: avg_2, enabled: true}
+            - {name: avg_3, enabled: true}
+          column_settings:
+            '["name","count"]': {column_title: Customers}
+            '["name","avg"]': {column_title: Avg days since last order, decimals: 0}
+            '["name","avg_2"]': {column_title: Avg orders, decimals: 1}
+            '["name","avg_3"]': {column_title: Avg lifetime revenue, number_style: currency, currency: USD, decimals: 0}
+      - name: Win-back list (Can't lose them and At risk), by lifetime revenue
+        description: High-value customers with no order in over a year. Customer IDs only; no personal details are kept.
+        source: model:Customers
+        display: table
+        layout: [0, 8, 24, 8]
+        query:
+          fields: ["@customer_key", "@country", "@segment", "@lifetime_orders", "@lifetime_revenue_usd", "@last_order_date", "@days_since_last_order", "@acquisition_channel"]
+          filter: ["=", "@segment", "Can't lose them", "At risk"]
+          order-by: [[desc, "@lifetime_revenue_usd"]]
+          limit: 200
+
+  # -------------------------------------------------------------------------------------------
+  - name: 4 · Stores and fulfilment
+    description: Store productivity, what store closures did to customers, and online delivery times.
+    cards:
+      - name: Revenue per square metre, 2025 (top 15 stores)
+        display: row
+        layout: [0, 0, 12, 8]
+        viz:
+          graph.show_values: true
+          graph.max_categories_enabled: false
+          graph.x_axis.title_text: ""
+          graph.y_axis.title_text: USD per m²
+          column_settings: {'["name","Revenue per m²"]': {number_style: currency, currency: USD, decimals: 0}}
+        sql: |
+          select store_name as "Store", revenue_per_sqm_usd as "Revenue per m²"
+          from marts.mart_store_performance
+          where year = 2025 and not is_online
+          order by 2 desc
+          limit 15
+      - name: Where closed stores' customers went
+        description: Customers who ordered at a store in the 12 months before it closed, by what they did in the 12 months after.
+        display: bar
+        layout: [12, 0, 12, 8]
+        viz:
+          stackable.stack_type: stacked
+          graph.x_axis.title_text: ""
+          graph.y_axis.title_text: Customers
+          series_settings:
+            Moved to another store: {color: "#6BA368"}
+            Moved online only: {color: "#3FA7D6"}
+            Lost: {color: "#D1495B"}
+        sql: |
+          select s.store_name || ' (' || to_char(close_date, 'Mon YYYY') || ')' as "Store", x.outcome as "Outcome", x.n as "Customers"
+          from marts.mart_store_closure_impact s
+          cross join lateral (values ('Moved to another store', moved_to_another_store),
+                                     ('Moved online only', moved_online_only),
+                                     ('Lost', customers_lost)) as x (outcome, n)
+          where customers_affected >= 100
+          order by close_date, 2
+      - name: Store closures, before and after
+        display: table
+        layout: [0, 8, 24, 7]
+        sql: |
+          select store_name as "Store", country as "Country", close_date as "Closed",
+                 customers_affected as "Customers affected", round(100 * retention_rate, 1) as "Retained %",
+                 round(revenue_12m_before_usd) as "Their revenue, 12m before (USD)",
+                 round(revenue_12m_after_usd) as "Their revenue, 12m after (USD)",
+                 round(100 * (revenue_12m_after_usd / nullif(revenue_12m_before_usd, 0) - 1), 1) as "Revenue change %"
+          from marts.mart_store_closure_impact
+          order by close_date
+      - name: Online delivery time by year
+        description: Days from order to delivery for online orders. Store orders are handed over the same day.
+        source: model:Orders
+        display: line
+        layout: [0, 15, 12, 7]
+        query: {aggregation: [[avg, "@delivery_days"]], breakout: ["@order_date|year"], filter: ["=", "@channel", "Online"]}
+        viz: {graph.x_axis.title_text: "", graph.y_axis.title_text: Average days to deliver}
+      - name: Revenue by store country, 2025 (online store shown separately)
+        source: model:Orders
+        display: bar
+        layout: [12, 15, 12, 7]
+        query: {aggregation: ["metric:Net revenue"], breakout: ["@store_country"], filter: ["between", "@order_date", "2025-01-01", "2025-12-31"]}
+        viz:
+          graph.x_axis.title_text: ""
+          graph.y_axis.title_text: Net revenue (USD millions)
+          column_settings: {'["name","Net revenue"]': {number_style: currency, currency: USD, scale: 0.000001, suffix: "M", decimals: 0}}
